@@ -5,17 +5,35 @@
       <p class="subtitle">轻松记忆单词，高效学习</p>
     </header>
 
-    <AddCard @add-card="handleAddCard" />
-
-    <CardList 
+    <ReviewMode 
+      v-if="isReviewMode" 
       :cards="cards" 
-      @delete-card="showDeleteConfirm" 
+      @exit-review="exitReviewMode" 
     />
 
-    <div v-if="cards.length === 0" class="empty-state">
-      <div class="empty-icon">📖</div>
-      <p>还没有单词卡片，快来添加第一张吧！</p>
-    </div>
+    <template v-else>
+      <div class="app-actions">
+        <button 
+          v-if="cards.length > 0" 
+          class="review-mode-btn"
+          @click="enterReviewMode"
+        >
+          📝 开始复习
+        </button>
+      </div>
+
+      <AddCard @add-card="handleAddCard" />
+
+      <CardList 
+        :cards="cards" 
+        @delete-card="showDeleteConfirm" 
+      />
+
+      <div v-if="cards.length === 0" class="empty-state">
+        <div class="empty-icon">📖</div>
+        <p>还没有单词卡片，快来添加第一张吧！</p>
+      </div>
+    </template>
 
     <ConfirmModal
       :visible="showDuplicateModal"
@@ -47,12 +65,14 @@ import { ref, onMounted, watch, computed } from 'vue'
 import AddCard from './components/AddCard.vue'
 import CardList from './components/CardList.vue'
 import ConfirmModal from './components/ConfirmModal.vue'
+import ReviewMode from './components/ReviewMode.vue'
 
 const cards = ref([])
 const showDuplicateModal = ref(false)
 const showDeleteModal = ref(false)
 const pendingCard = ref(null)
 const pendingDeleteId = ref(null)
+const isReviewMode = ref(false)
 
 const deleteMessage = computed(() => {
   return '确定要删除这张卡片吗？\n删除后无法恢复。'
@@ -129,6 +149,14 @@ const confirmDelete = () => {
   }
 }
 
+const enterReviewMode = () => {
+  isReviewMode.value = true
+}
+
+const exitReviewMode = () => {
+  isReviewMode.value = false
+}
+
 onMounted(() => {
   loadCards()
 })
@@ -182,5 +210,33 @@ watch(cards, () => {
   60% {
     transform: translateY(-10px);
   }
+}
+
+.app-actions {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 30px;
+}
+
+.review-mode-btn {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+  border: none;
+  padding: 12px 30px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 5px 15px rgba(240, 147, 251, 0.4);
+}
+
+.review-mode-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 25px rgba(240, 147, 251, 0.5);
+}
+
+.review-mode-btn:active {
+  transform: translateY(0);
 }
 </style>
