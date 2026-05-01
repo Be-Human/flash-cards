@@ -3,20 +3,31 @@
     <div v-if="!isReviewing && !showResult" class="review-start">
       <h2>📝 复习模式</h2>
       <p class="review-description">随机打乱卡片顺序，逐张复习，标记认识或不认识</p>
-      <button 
-        v-if="cards.length > 0" 
-        class="start-btn"
-        @click="startReview"
-      >
-        开始复习 ({{ cards.length }} 张卡片)
-      </button>
-      <p v-else class="no-cards-text">没有卡片可供复习</p>
-      <button class="back-btn" @click="exitReview">
-        返回卡片列表
-      </button>
+      <div v-if="cards.length > 0" class="review-start-actions">
+        <button 
+          class="action-btn primary-btn"
+          @click="startReview"
+        >
+          开始复习 ({{ cards.length }} 张卡片)
+        </button>
+        <button class="action-btn secondary-btn" @click="exitReview">
+          返回卡片列表
+        </button>
+      </div>
+      <div v-else class="review-start-actions">
+        <p class="no-cards-text">没有卡片可供复习</p>
+        <button class="action-btn secondary-btn" @click="exitReview">
+          返回卡片列表
+        </button>
+      </div>
     </div>
 
     <div v-if="isReviewing && !showResult" class="review-in-progress">
+      <div class="review-header">
+        <button class="exit-review-btn" @click="exitReview">
+          ← 退出复习
+        </button>
+      </div>
       <div class="review-progress">
         <div class="progress-info">
           <span class="current-card">第 {{ currentIndex + 1 }} 张</span>
@@ -246,49 +257,89 @@ const exitReview = () => {
   line-height: 1.6;
 }
 
-.start-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
+.review-start-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+}
+
+.action-btn {
   padding: 15px 40px;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   font-weight: bold;
   border-radius: 12px;
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
-  margin-bottom: 20px;
+  transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+  min-width: 220px;
+  text-align: center;
 }
 
-.start-btn:hover {
+.action-btn:hover {
   transform: translateY(-3px);
-  box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
 }
 
-.start-btn:active {
+.action-btn:active {
   transform: translateY(0);
+}
+
+.primary-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.primary-btn:hover {
+  box-shadow: 0 10px 25px rgba(102, 126, 234, 0.5);
+}
+
+.secondary-btn {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.secondary-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 5px 15px rgba(255, 255, 255, 0.15);
 }
 
 .no-cards-text {
   color: rgba(255, 255, 255, 0.7);
   font-size: 1.1rem;
+  margin: 0;
+  padding: 10px 0;
+}
+
+.review-header {
+  width: 100%;
+  max-width: 500px;
   margin-bottom: 20px;
+  display: flex;
+  justify-content: flex-start;
 }
 
-.back-btn {
-  background: rgba(255, 255, 255, 0.2);
+.exit-review-btn {
+  background: rgba(255, 255, 255, 0.15);
   color: white;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  padding: 12px 30px;
-  font-size: 1rem;
-  font-weight: 600;
-  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 8px 16px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  border-radius: 8px;
   cursor: pointer;
-  transition: background 0.2s, transform 0.2s;
+  transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
 }
 
-.back-btn:hover {
-  background: rgba(255, 255, 255, 0.3);
+.exit-review-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
   transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.exit-review-btn:active {
+  transform: translateY(0);
 }
 
 .review-in-progress {
