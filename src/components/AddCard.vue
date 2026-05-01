@@ -3,26 +3,28 @@
     <div class="form-container">
       <h2>➕ 添加新单词卡片</h2>
       <form @submit.prevent="handleSubmit">
-        <div class="form-group">
+        <div class="form-group" :class="{ 'has-error': wordError }">
           <label for="word">单词 *</label>
           <input 
             type="text" 
             id="word" 
             v-model="formData.word"
             placeholder="请输入单词"
-            required
+            @input="clearWordError"
           />
+          <span v-if="wordError" class="error-message">{{ wordError }}</span>
         </div>
         
-        <div class="form-group">
+        <div class="form-group" :class="{ 'has-error': meaningError }">
           <label for="meaning">释义 *</label>
           <input 
             type="text" 
             id="meaning" 
             v-model="formData.meaning"
             placeholder="请输入单词释义"
-            required
+            @input="clearMeaningError"
           />
+          <span v-if="meaningError" class="error-message">{{ meaningError }}</span>
         </div>
         
         <div class="form-group">
@@ -54,11 +56,34 @@ const formData = reactive({
   example: ''
 })
 
+const wordError = ref('')
+const meaningError = ref('')
+
+const clearWordError = () => {
+  wordError.value = ''
+}
+
+const clearMeaningError = () => {
+  meaningError.value = ''
+}
+
 const handleSubmit = () => {
-  if (!formData.word.trim() || !formData.meaning.trim()) {
-    alert('单词和释义为必填项！')
-    return
+  wordError.value = ''
+  meaningError.value = ''
+  
+  let hasError = false
+  
+  if (!formData.word.trim()) {
+    wordError.value = '请输入单词'
+    hasError = true
   }
+  
+  if (!formData.meaning.trim()) {
+    meaningError.value = '请输入释义'
+    hasError = true
+  }
+  
+  if (hasError) return
   
   emit('add-card', {
     word: formData.word.trim(),
@@ -120,6 +145,23 @@ form {
   font-size: 1rem;
   transition: border-color 0.3s, box-shadow 0.3s;
   font-family: inherit;
+}
+
+.form-group.has-error input,
+.form-group.has-error textarea {
+  border-color: #ff6b6b;
+}
+
+.form-group.has-error input:focus,
+.form-group.has-error textarea:focus {
+  border-color: #ff6b6b;
+  box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.15);
+}
+
+.error-message {
+  color: #ff6b6b;
+  font-size: 0.85rem;
+  margin-top: 4px;
 }
 
 .form-group input:focus,
