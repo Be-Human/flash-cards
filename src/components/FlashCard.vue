@@ -22,6 +22,13 @@
       </div>
     </div>
     <button 
+      class="edit-btn"
+      @click.stop="$emit('edit-card', card)"
+      title="编辑卡片"
+    >
+      ✏️
+    </button>
+    <button 
       class="delete-btn"
       @click.stop="$emit('delete-card', card.id)"
       title="删除卡片"
@@ -41,7 +48,7 @@ defineProps({
   }
 })
 
-defineEmits(['delete-card'])
+defineEmits(['delete-card', 'edit-card'])
 
 const isFlipped = ref(false)
 
@@ -135,6 +142,23 @@ const flipCard = () => {
   color: rgba(255, 255, 255, 0.8);
 }
 
+.edit-btn {
+  position: absolute;
+  top: 10px;
+  right: 56px;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(102, 126, 234, 0.9);
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+  z-index: 10;
+  opacity: 0;
+  transition: opacity 0.3s, transform 0.2s;
+}
+
 .delete-btn {
   position: absolute;
   top: 10px;
@@ -152,8 +176,14 @@ const flipCard = () => {
   transition: opacity 0.3s, transform 0.2s;
 }
 
+.flash-card-wrapper:hover .edit-btn,
 .flash-card-wrapper:hover .delete-btn {
   opacity: 1;
+}
+
+.edit-btn:hover {
+  transform: scale(1.1);
+  background: #5a6fd6;
 }
 
 .delete-btn:hover {

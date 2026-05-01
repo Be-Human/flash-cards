@@ -27,6 +27,7 @@
       <CardList 
         :cards="cards" 
         @delete-card="showDeleteConfirm" 
+        @edit-card="handleEditCard"
       />
 
       <div v-if="cards.length === 0" class="empty-state">
@@ -57,6 +58,13 @@
       @update:visible="(val) => showDeleteModal = val"
       @confirm="confirmDelete"
     />
+
+    <EditCard
+      :visible="showEditModal"
+      :card="editingCard"
+      @update:visible="(val) => showEditModal = val"
+      @save-card="handleSaveCard"
+    />
   </div>
 </template>
 
@@ -66,12 +74,15 @@ import AddCard from './components/AddCard.vue'
 import CardList from './components/CardList.vue'
 import ConfirmModal from './components/ConfirmModal.vue'
 import ReviewMode from './components/ReviewMode.vue'
+import EditCard from './components/EditCard.vue'
 
 const cards = ref([])
 const showDuplicateModal = ref(false)
 const showDeleteModal = ref(false)
+const showEditModal = ref(false)
 const pendingCard = ref(null)
 const pendingDeleteId = ref(null)
+const editingCard = ref(null)
 const isReviewMode = ref(false)
 
 const deleteMessage = computed(() => {
@@ -147,6 +158,22 @@ const confirmDelete = () => {
     cards.value = cards.value.filter(card => card.id !== pendingDeleteId.value)
     pendingDeleteId.value = null
   }
+}
+
+const handleEditCard = (card) => {
+  editingCard.value = { ...card }
+  showEditModal.value = true
+}
+
+const handleSaveCard = (updatedCard) => {
+  const index = cards.value.findIndex(card => card.id === updatedCard.id)
+  if (index !== -1) {
+    cards.value[index] = {
+      ...cards.value[index],
+      ...updatedCard
+    }
+  }
+  editingCard.value = null
 }
 
 const enterReviewMode = () => {
