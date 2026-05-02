@@ -288,10 +288,10 @@ const enterReviewMode = (categoryId = null) => {
 }
 
 const getCardsForReview = computed(() => {
-  if (selectedCategoryForReview.value) {
-    return cards.value.filter(card => card.categoryId === selectedCategoryForReview.value)
+  if (selectedCategoryForReview.value == null || selectedCategoryForReview.value === '') {
+    return cards.value
   }
-  return cards.value
+  return cards.value.filter(card => card.categoryId === selectedCategoryForReview.value)
 })
 
 const exitReviewMode = () => {
