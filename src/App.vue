@@ -41,10 +41,10 @@
       title="单词已存在"
       :message="duplicateMessage"
       icon="⚠️"
-      confirm-text="仍要添加"
+      :confirm-text="isEditDuplicate ? '仍要修改' : '仍要添加'"
       cancel-text="取消"
-      @update:visible="(val) => showDuplicateModal = val"
-      @confirm="confirmAddDuplicate"
+      @update:visible="handleDuplicateModalClose"
+      @confirm="handleDuplicateConfirm"
     />
 
     <ConfirmModal
@@ -83,6 +83,8 @@ const showEditModal = ref(false)
 const pendingCard = ref(null)
 const pendingDeleteId = ref(null)
 const editingCard = ref(null)
+const pendingEditCard = ref(null)
+const isEditDuplicate = ref(false)
 const isReviewMode = ref(false)
 
 const deleteMessage = computed(() => {
@@ -90,6 +92,17 @@ const deleteMessage = computed(() => {
 })
 
 const duplicateMessage = computed(() => {
+  if (isEditDuplicate.value && pendingEditCard.value) {
+    const word = pendingEditCard.value.word
+    const existingCard = cards.value.find(
+      c => c.word.toLowerCase() === word.toLowerCase() && c.id !== pendingEditCard.value.id
+    )
+    if (existingCard) {
+      return '单词 "' + word + '" 已存在：\n释义：' + existingCard.meaning + '\n\n是否仍要修改此卡片？'
+    }
+    return '单词 "' + word + '" 已存在。\n是否仍要修改？'
+  }
+  
   if (!pendingCard.value) return ''
   const word = pendingCard.value.word
   const existingCard = cards.value.find(
@@ -117,9 +130,9 @@ const saveCards = () => {
   localStorage.setItem('flashCards', JSON.stringify(cards.value))
 }
 
-const isWordDuplicate = (word) => {
+const isWordDuplicate = (word, excludeId = null) => {
   return cards.value.some(
-    card => card.word.toLowerCase() === word.toLowerCase()
+    card => card.word.toLowerCase() === word.toLowerCase() && card.id !== excludeId
   )
 }
 
@@ -148,6 +161,23 @@ const confirmAddDuplicate = () => {
   }
 }
 
+const handleDuplicateModalClose = (val) => {
+  showDuplicateModal.value = val
+  if (!val) {
+    isEditDuplicate.value = false
+    pendingEditCard.value = null
+    pendingCard.value = null
+  }
+}
+
+const handleDuplicateConfirm = () => {
+  if (isEditDuplicate.value) {
+    confirmEditDuplicate()
+  } else {
+    confirmAddDuplicate()
+  }
+}
+
 const showDeleteConfirm = (id) => {
   pendingDeleteId.value = id
   showDeleteModal.value = true
@@ -166,6 +196,17 @@ const handleEditCard = (card) => {
 }
 
 const handleSaveCard = (updatedCard) => {
+  if (isWordDuplicate(updatedCard.word, updatedCard.id)) {
+    pendingEditCard.value = updatedCard
+    isEditDuplicate.value = true
+    showDuplicateModal.value = true
+    return
+  }
+  
+  saveCardToData(updatedCard)
+}
+
+const saveCardToData = (updatedCard) => {
   const index = cards.value.findIndex(card => card.id === updatedCard.id)
   if (index !== -1) {
     cards.value[index] = {
@@ -174,6 +215,14 @@ const handleSaveCard = (updatedCard) => {
     }
   }
   editingCard.value = null
+  pendingEditCard.value = null
+  isEditDuplicate.value = false
+}
+
+const confirmEditDuplicate = () => {
+  if (pendingEditCard.value) {
+    saveCardToData(pendingEditCard.value)
+  }
 }
 
 const enterReviewMode = () => {
