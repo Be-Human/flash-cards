@@ -5,7 +5,7 @@
       <p class="review-description">
         {{ isErrorBookMode ? '专注复习曾经标记为「不认识」的单词卡片' : '随机打乱卡片顺序，逐张复习，标记认识或不认识' }}
       </p>
-      <div v-if="getCurrentCategoryCards().length > 0" class="review-start-actions">
+      <div v-if="isErrorBookMode ? getCurrentCategoryCards().length > 0 : cards.length > 0" class="review-start-actions">
         <div class="category-select-section" v-if="!isErrorBookMode">
           <label class="category-label">选择分类：</label>
           <select v-model="reviewCategory" class="category-select">
