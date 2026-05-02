@@ -7,6 +7,10 @@
     >
       <div class="flash-card__face flash-card__face--front">
         <div class="word">{{ card.word }}</div>
+        <div class="stats" v-if="card.knownCount > 0 || card.unknownCount > 0">
+          <span class="stat known">✅ {{ card.knownCount }}</span>
+          <span class="stat unknown">❌ {{ card.unknownCount }}</span>
+        </div>
         <div class="hint">点击翻转查看释义</div>
       </div>
       <div class="flash-card__face flash-card__face--back">
@@ -107,7 +111,29 @@ const flipCard = () => {
 .word {
   font-size: 2.5rem;
   font-weight: bold;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
+}
+
+.stats {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.stat {
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.stat.known {
+  color: #4ade80;
+}
+
+.stat.unknown {
+  color: #f87171;
 }
 
 .meaning, .example {

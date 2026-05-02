@@ -12,6 +12,7 @@
       :selected-category="selectedCategoryForReview"
       :get-category-name="getCategoryName"
       @exit-review="exitReviewMode" 
+      @update-card-stats="handleUpdateCardStats"
     />
 
     <template v-else>
@@ -132,7 +133,12 @@ const loadCards = () => {
   const savedCards = localStorage.getItem('flashCards')
   if (savedCards) {
     try {
-      cards.value = JSON.parse(savedCards)
+      const parsedCards = JSON.parse(savedCards)
+      cards.value = parsedCards.map(card => ({
+        knownCount: 0,
+        unknownCount: 0,
+        ...card
+      }))
     } catch (e) {
       console.error('Failed to load cards:', e)
       cards.value = []
@@ -196,6 +202,8 @@ const addCardToData = (cardData) => {
   const newCard = {
     id: Date.now().toString(),
     ...cardData,
+    knownCount: 0,
+    unknownCount: 0,
     createdAt: new Date().toISOString()
   }
   cards.value.unshift(newCard)
@@ -288,6 +296,17 @@ const enterReviewMode = (categoryId = null) => {
 
 const exitReviewMode = () => {
   isReviewMode.value = false
+}
+
+const handleUpdateCardStats = (cardId, type) => {
+  const card = cards.value.find(c => c.id === cardId)
+  if (card) {
+    if (type === 'known') {
+      card.knownCount++
+    } else if (type === 'unknown') {
+      card.unknownCount++
+    }
+  }
 }
 
 onMounted(() => {
