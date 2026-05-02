@@ -11,7 +11,9 @@
       :categories="categories"
       :selected-category="selectedCategoryForReview"
       :get-category-name="getCategoryName"
+      :is-error-book-mode="isErrorBookMode"
       @exit-review="exitReviewMode" 
+      @update-card-stats="handleUpdateCardStats"
     />
 
     <template v-else>
@@ -38,6 +40,7 @@
         @delete-card="showDeleteConfirm" 
         @edit-card="handleEditCard"
         @enter-review-by-category="enterReviewMode"
+        @enter-review-error-book="enterReviewErrorBook"
       />
 
       <div v-if="cards.length === 0" class="empty-state">
@@ -100,6 +103,7 @@ const pendingEditCard = ref(null)
 const isEditDuplicate = ref(false)
 const isReviewMode = ref(false)
 const selectedCategoryForReview = ref(null)
+const isErrorBookMode = ref(false)
 
 const deleteMessage = computed(() => {
   return '确定要删除这张卡片吗？\n删除后无法恢复。'
@@ -132,7 +136,12 @@ const loadCards = () => {
   const savedCards = localStorage.getItem('flashCards')
   if (savedCards) {
     try {
-      cards.value = JSON.parse(savedCards)
+      const parsed = JSON.parse(savedCards)
+      cards.value = parsed.map(card => ({
+        knownCount: 0,
+        unknownCount: 0,
+        ...card
+      }))
     } catch (e) {
       console.error('Failed to load cards:', e)
       cards.value = []
@@ -196,9 +205,22 @@ const addCardToData = (cardData) => {
   const newCard = {
     id: Date.now().toString(),
     ...cardData,
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
+    knownCount: 0,
+    unknownCount: 0
   }
   cards.value.unshift(newCard)
+}
+
+const handleUpdateCardStats = (cardId, status) => {
+  const card = cards.value.find(c => c.id === cardId)
+  if (card) {
+    if (status === 'known') {
+      card.knownCount = (card.knownCount || 0) + 1
+    } else if (status === 'unknown') {
+      card.unknownCount = (card.unknownCount || 0) + 1
+    }
+  }
 }
 
 const handleAddCard = (cardData) => {
@@ -283,11 +305,19 @@ const confirmEditDuplicate = () => {
 
 const enterReviewMode = (categoryId = null) => {
   selectedCategoryForReview.value = categoryId
+  isErrorBookMode.value = false
+  isReviewMode.value = true
+}
+
+const enterReviewErrorBook = () => {
+  selectedCategoryForReview.value = null
+  isErrorBookMode.value = true
   isReviewMode.value = true
 }
 
 const exitReviewMode = () => {
   isReviewMode.value = false
+  isErrorBookMode.value = false
 }
 
 onMounted(() => {

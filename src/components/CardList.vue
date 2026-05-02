@@ -2,7 +2,27 @@
   <div class="card-list">
     <div v-if="cards.length > 0" class="list-header">
       <div class="header-actions">
-        <h2>📋 我的单词卡片 ({{ filteredCards.length }})</h2>
+        <h2>
+          {{ showErrorBook ? '� 错题本' : '� 我的单词卡片' }} 
+          ({{ filteredCards.length }})
+        </h2>
+        <div class="action-buttons">
+          <button 
+            class="error-book-btn"
+            :class="{ active: showErrorBook }"
+            @click="toggleErrorBook"
+          >
+            {{ showErrorBook ? '📋 返回全部' : '📕 错题本' }}
+            <span v-if="errorBookCount > 0" class="error-count-badge">{{ errorBookCount }}</span>
+          </button>
+          <button 
+            v-if="showErrorBook && filteredCards.length > 0"
+            class="review-error-book-btn"
+            @click="startReviewErrorBook"
+          >
+            📝 复习错题
+          </button>
+        </div>
         <div class="search-sort-container">
           <div class="search-box">
             <input 
@@ -13,7 +33,7 @@
             />
             <span v-if="searchQuery" class="search-clear" @click="clearSearch">✕</span>
           </div>
-          <div class="filter-box">
+          <div class="filter-box" v-if="!showErrorBook">
             <select v-model="selectedCategory" class="filter-select">
               <option value="">全部分类</option>
               <option 
@@ -32,6 +52,7 @@
               <option value="oldest">最早添加</option>
               <option value="alphabetical">字母顺序 (A-Z)</option>
               <option value="alphabetical-reverse">字母顺序 (Z-A)</option>
+              <option value="unknown-first" v-if="showErrorBook">错题最多优先</option>
             </select>
           </div>
         </div>
@@ -71,16 +92,25 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['delete-card', 'edit-card', 'enter-review-by-category'])
+const emit = defineEmits(['delete-card', 'edit-card', 'enter-review-by-category', 'enter-review-error-book'])
 
 const searchQuery = ref('')
 const sortBy = ref('newest')
 const selectedCategory = ref('')
+const showErrorBook = ref(false)
+
+const errorBookCards = computed(() => {
+  return props.cards.filter(card => card.unknownCount && card.unknownCount > 0)
+})
+
+const errorBookCount = computed(() => errorBookCards.value.length)
 
 const filteredCards = computed(() => {
   let result = [...props.cards]
   
-  if (selectedCategory.value) {
+  if (showErrorBook.value) {
+    result = errorBookCards.value
+  } else if (selectedCategory.value) {
     if (selectedCategory.value === 'uncategorized') {
       result = result.filter(card => !card.categoryId)
     } else {
@@ -110,10 +140,22 @@ const filteredCards = computed(() => {
     case 'alphabetical-reverse':
       result.sort((a, b) => b.word.localeCompare(a.word, 'en', { sensitivity: 'base' }))
       break
+    case 'unknown-first':
+      result.sort((a, b) => (b.unknownCount || 0) - (a.unknownCount || 0))
+      break
   }
   
   return result
 })
+
+const toggleErrorBook = () => {
+  showErrorBook.value = !showErrorBook.value
+  selectedCategory.value = ''
+}
+
+const startReviewErrorBook = () => {
+  emit('enter-review-error-book')
+}
 
 const clearSearch = () => {
   searchQuery.value = ''
@@ -142,6 +184,75 @@ const clearSearch = () => {
   font-size: 1.5rem;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
   margin: 0;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.error-book-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border: 2px solid rgba(248, 113, 113, 0.5);
+  border-radius: 10px;
+  background: rgba(248, 113, 113, 0.1);
+  color: #f87171;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.error-book-btn:hover {
+  background: rgba(248, 113, 113, 0.2);
+  border-color: rgba(248, 113, 113, 0.7);
+}
+
+.error-book-btn.active {
+  background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+  color: white;
+  border-color: transparent;
+  box-shadow: 0 4px 15px rgba(248, 113, 113, 0.4);
+}
+
+.error-count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  background: #ef4444;
+  color: white;
+  border-radius: 10px;
+}
+
+.error-book-btn.active .error-count-badge {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.review-error-book-btn {
+  padding: 10px 20px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 4px 15px rgba(240, 147, 251, 0.4);
+}
+
+.review-error-book-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(240, 147, 251, 0.5);
 }
 
 .search-sort-container {

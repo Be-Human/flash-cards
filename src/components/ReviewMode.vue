@@ -1,10 +1,12 @@
 <template>
   <div class="review-mode">
     <div v-if="!isReviewing && !showResult" class="review-start">
-      <h2>📝 复习模式</h2>
-      <p class="review-description">随机打乱卡片顺序，逐张复习，标记认识或不认识</p>
-      <div v-if="cards.length > 0" class="review-start-actions">
-        <div class="category-select-section">
+      <h2>{{ isErrorBookMode ? '� 错题本复习' : '� 复习模式' }}</h2>
+      <p class="review-description">
+        {{ isErrorBookMode ? '专注复习曾经标记为「不认识」的单词卡片' : '随机打乱卡片顺序，逐张复习，标记认识或不认识' }}
+      </p>
+      <div v-if="getCurrentCategoryCards().length > 0" class="review-start-actions">
+        <div class="category-select-section" v-if="!isErrorBookMode">
           <label class="category-label">选择分类：</label>
           <select v-model="reviewCategory" class="category-select">
             <option value="">全部分类 ({{ cards.length }} 张)</option>
@@ -20,6 +22,9 @@
             </option>
           </select>
         </div>
+        <div v-if="isErrorBookMode" class="error-book-info">
+          <p>错题数量: <strong>{{ getCurrentCategoryCards().length }}</strong> 张</p>
+        </div>
         <button 
           class="action-btn primary-btn"
           @click="handleStartReview"
@@ -32,7 +37,9 @@
         </button>
       </div>
       <div v-else class="review-start-actions">
-        <p class="no-cards-text">没有卡片可供复习</p>
+        <p class="no-cards-text">
+          {{ isErrorBookMode ? '错题本为空，继续学习吧！' : '没有卡片可供复习' }}
+        </p>
         <button class="action-btn secondary-btn" @click="exitReview">
           返回卡片列表
         </button>
@@ -177,10 +184,14 @@ const props = defineProps({
   },
   selectedCategory: {
     default: null
+  },
+  isErrorBookMode: {
+    type: Boolean,
+    default: false
   }
 })
 
-const emit = defineEmits(['exit-review'])
+const emit = defineEmits(['exit-review', 'update-card-stats'])
 
 const isReviewing = ref(false)
 const showResult = ref(false)
@@ -211,13 +222,19 @@ const getCategoryCardCount = (categoryId) => {
 }
 
 const getCurrentCategoryCards = () => {
-  if (!reviewCategory.value) {
-    return props.cards
+  let result = props.cards
+  
+  if (props.isErrorBookMode) {
+    result = result.filter(card => card.unknownCount && card.unknownCount > 0)
+  } else if (reviewCategory.value) {
+    if (reviewCategory.value === 'uncategorized') {
+      result = result.filter(card => !card.categoryId)
+    } else {
+      result = result.filter(card => card.categoryId === reviewCategory.value)
+    }
   }
-  if (reviewCategory.value === 'uncategorized') {
-    return props.cards.filter(card => !card.categoryId)
-  }
-  return props.cards.filter(card => card.categoryId === reviewCategory.value)
+  
+  return result
 }
 
 const shuffleArray = (array) => {
@@ -254,6 +271,7 @@ const markKnown = () => {
   if (!isFlipped.value) return
   
   knownCount.value++
+  emit('update-card-stats', currentCard.value.id, 'known')
   nextCard()
 }
 
@@ -261,6 +279,7 @@ const markUnknown = () => {
   if (!isFlipped.value) return
   
   unknownCount.value++
+  emit('update-card-stats', currentCard.value.id, 'unknown')
   nextCard()
 }
 
@@ -410,6 +429,24 @@ const exitReview = () => {
 .category-select option {
   background: #667eea;
   color: white;
+}
+
+.error-book-info {
+  padding: 15px 30px;
+  background: rgba(248, 113, 113, 0.15);
+  border: 2px solid rgba(248, 113, 113, 0.4);
+  border-radius: 12px;
+}
+
+.error-book-info p {
+  margin: 0;
+  color: white;
+  font-size: 1.1rem;
+}
+
+.error-book-info strong {
+  color: #f87171;
+  font-size: 1.5rem;
 }
 
 .action-btn:disabled {
