@@ -4,11 +4,28 @@
       <h2>📝 复习模式</h2>
       <p class="review-description">随机打乱卡片顺序，逐张复习，标记认识或不认识</p>
       <div v-if="cards.length > 0" class="review-start-actions">
+        <div class="category-select-section">
+          <label class="category-label">选择分类：</label>
+          <select v-model="reviewCategory" class="category-select">
+            <option value="">全部分类 ({{ cards.length }} 张)</option>
+            <option 
+              v-for="category in categories" 
+              :key="category.id" 
+              :value="category.id"
+            >
+              {{ category.name }} ({{ getCategoryCardCount(category.id) }} 张)
+            </option>
+            <option value="uncategorized">
+              未分类 ({{ getCategoryCardCount(null) }} 张)
+            </option>
+          </select>
+        </div>
         <button 
           class="action-btn primary-btn"
-          @click="startReview"
+          @click="handleStartReview"
+          :disabled="getCurrentCategoryCards().length === 0"
         >
-          开始复习 ({{ cards.length }} 张卡片)
+          开始复习 ({{ getCurrentCategoryCards().length }} 张卡片)
         </button>
         <button class="action-btn secondary-btn" @click="exitReview">
           返回卡片列表
@@ -153,10 +170,18 @@ const props = defineProps({
   cards: {
     type: Array,
     default: () => []
+  },
+  categories: {
+    type: Array,
+    default: () => []
+  },
+  selectedCategory: {
+    type: String,
+    default: null
   }
 })
 
-const emit = defineEmits(['exit-review'])
+const emit = defineEmits(['exit-review', 'enter-review-by-category'])
 
 const isReviewing = ref(false)
 const showResult = ref(false)
@@ -165,10 +190,28 @@ const currentIndex = ref(0)
 const isFlipped = ref(false)
 const knownCount = ref(0)
 const unknownCount = ref(0)
+const reviewCategory = ref(props.selectedCategory || '')
 
 const currentCard = computed(() => {
   return shuffledCards.value[currentIndex.value] || {}
 })
+
+const getCategoryCardCount = (categoryId) => {
+  if (categoryId === null) {
+    return props.cards.filter(card => !card.categoryId).length
+  }
+  return props.cards.filter(card => card.categoryId === categoryId).length
+}
+
+const getCurrentCategoryCards = () => {
+  if (!reviewCategory.value) {
+    return props.cards
+  }
+  if (reviewCategory.value === 'uncategorized') {
+    return props.cards.filter(card => !card.categoryId)
+  }
+  return props.cards.filter(card => card.categoryId === reviewCategory.value)
+}
 
 const shuffleArray = (array) => {
   const shuffled = [...array]
@@ -179,14 +222,21 @@ const shuffleArray = (array) => {
   return shuffled
 }
 
-const startReview = () => {
-  shuffledCards.value = shuffleArray(props.cards)
+const startReview = (cardsToReview) => {
+  shuffledCards.value = shuffleArray(cardsToReview)
   currentIndex.value = 0
   isFlipped.value = false
   knownCount.value = 0
   unknownCount.value = 0
   isReviewing.value = true
   showResult.value = false
+}
+
+const handleStartReview = () => {
+  const cardsToReview = getCurrentCategoryCards()
+  if (cardsToReview.length > 0) {
+    startReview(cardsToReview)
+  }
 }
 
 const flipCard = () => {
@@ -218,7 +268,7 @@ const nextCard = () => {
 }
 
 const restartReview = () => {
-  startReview()
+  handleStartReview()
 }
 
 const exitReview = () => {
@@ -310,6 +360,55 @@ const exitReview = () => {
   font-size: 1.1rem;
   margin: 0;
   padding: 10px 0;
+}
+
+.category-select-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 300px;
+}
+
+.category-label {
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.category-select {
+  width: 100%;
+  padding: 12px 40px 12px 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='rgba(255,255,255,0.8)'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+  transition: border-color 0.3s, background 0.3s;
+}
+
+.category-select:focus {
+  outline: none;
+  border-color: rgba(102, 126, 234, 0.8);
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+.category-select option {
+  background: #667eea;
+  color: white;
+}
+
+.action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .review-header {

@@ -13,6 +13,19 @@
             />
             <span v-if="searchQuery" class="search-clear" @click="clearSearch">✕</span>
           </div>
+          <div class="filter-box">
+            <select v-model="selectedCategory" class="filter-select">
+              <option value="">全部分类</option>
+              <option 
+                v-for="category in categories" 
+                :key="category.id" 
+                :value="category.id"
+              >
+                {{ category.name }}
+              </option>
+              <option value="uncategorized">未分类</option>
+            </select>
+          </div>
           <div class="sort-box">
             <select v-model="sortBy" class="sort-select">
               <option value="newest">最新添加</option>
@@ -47,16 +60,33 @@ const props = defineProps({
   cards: {
     type: Array,
     default: () => []
+  },
+  categories: {
+    type: Array,
+    default: () => []
+  },
+  getCategoryName: {
+    type: Function,
+    default: (id) => id ? '已删除分类' : '未分类'
   }
 })
 
-const emit = defineEmits(['delete-card', 'edit-card'])
+const emit = defineEmits(['delete-card', 'edit-card', 'enter-review-by-category'])
 
 const searchQuery = ref('')
 const sortBy = ref('newest')
+const selectedCategory = ref('')
 
 const filteredCards = computed(() => {
   let result = [...props.cards]
+  
+  if (selectedCategory.value) {
+    if (selectedCategory.value === 'uncategorized') {
+      result = result.filter(card => !card.categoryId)
+    } else {
+      result = result.filter(card => card.categoryId === selectedCategory.value)
+    }
+  }
   
   if (searchQuery.value.trim()) {
     const query = searchQuery.value.toLowerCase().trim()
@@ -189,6 +219,38 @@ const clearSearch = () => {
   background-color: rgba(255, 255, 255, 0.15);
 }
 
+.filter-box {
+  display: flex;
+  align-items: center;
+}
+
+.filter-select {
+  padding: 10px 35px 10px 15px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  font-size: 0.95rem;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='rgba(255,255,255,0.8)'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+  transition: border-color 0.3s, background 0.3s;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: rgba(102, 126, 234, 0.8);
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+.filter-select option {
+  background: #667eea;
+  color: white;
+}
+
 .sort-select option {
   background: #667eea;
   color: white;
@@ -215,12 +277,14 @@ const clearSearch = () => {
   }
   
   .search-box,
+  .filter-box,
   .sort-box {
     width: 100%;
     max-width: 300px;
   }
   
   .search-input,
+  .filter-select,
   .sort-select {
     width: 100%;
   }
