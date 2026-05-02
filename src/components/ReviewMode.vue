@@ -164,7 +164,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 
 const props = defineProps({
   cards: {
@@ -176,12 +176,11 @@ const props = defineProps({
     default: () => []
   },
   selectedCategory: {
-    type: String,
     default: null
   }
 })
 
-const emit = defineEmits(['exit-review', 'enter-review-by-category'])
+const emit = defineEmits(['exit-review'])
 
 const isReviewing = ref(false)
 const showResult = ref(false)
@@ -190,11 +189,19 @@ const currentIndex = ref(0)
 const isFlipped = ref(false)
 const knownCount = ref(0)
 const unknownCount = ref(0)
-const reviewCategory = ref(props.selectedCategory || '')
+const reviewCategory = ref('')
 
 const currentCard = computed(() => {
   return shuffledCards.value[currentIndex.value] || {}
 })
+
+watch(() => props.selectedCategory, (newVal) => {
+  if (newVal != null && newVal !== '') {
+    reviewCategory.value = newVal
+  } else {
+    reviewCategory.value = ''
+  }
+}, { immediate: true })
 
 const getCategoryCardCount = (categoryId) => {
   if (categoryId === null) {
