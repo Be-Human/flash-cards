@@ -7,6 +7,11 @@
     >
       <div class="flash-card__face flash-card__face--front">
         <div class="word">{{ card.word }}</div>
+        <div class="stats-badge" v-if="hasStats">
+          <span class="stat-known">✅ {{ card.knownCount || 0 }}</span>
+          <span class="stat-separator">|</span>
+          <span class="stat-unknown">❌ {{ card.unknownCount || 0 }}</span>
+        </div>
         <div class="hint">点击翻转查看释义</div>
       </div>
       <div class="flash-card__face flash-card__face--back">
@@ -17,6 +22,11 @@
         <div class="example" v-if="card.example">
           <span class="label">例句：</span>
           <span class="content">{{ card.example }}</span>
+        </div>
+        <div class="stats-badge" v-if="hasStats">
+          <span class="stat-known">✅ 认识: {{ card.knownCount || 0 }}</span>
+          <span class="stat-separator">|</span>
+          <span class="stat-unknown">❌ 不认识: {{ card.unknownCount || 0 }}</span>
         </div>
         <div class="hint">点击翻回</div>
       </div>
@@ -39,9 +49,9 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 
-defineProps({
+const props = defineProps({
   card: {
     type: Object,
     required: true
@@ -51,6 +61,11 @@ defineProps({
 defineEmits(['delete-card', 'edit-card'])
 
 const isFlipped = ref(false)
+
+const hasStats = computed(() => {
+  return (props.card.knownCount && props.card.knownCount > 0) || 
+         (props.card.unknownCount && props.card.unknownCount > 0)
+})
 
 const flipCard = () => {
   isFlipped.value = !isFlipped.value
@@ -140,6 +155,36 @@ const flipCard = () => {
 
 .flash-card__face--front .hint {
   color: rgba(255, 255, 255, 0.8);
+}
+
+.stats-badge {
+  font-size: 0.85rem;
+  margin-bottom: 12px;
+  padding: 6px 16px;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 20px;
+}
+
+.flash-card__face--front .stats-badge {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.flash-card__face--back .stats-badge {
+  background: rgba(102, 126, 234, 0.1);
+  color: #667eea;
+}
+
+.stat-known {
+  color: #4ade80;
+}
+
+.stat-separator {
+  margin: 0 8px;
+  opacity: 0.6;
+}
+
+.stat-unknown {
+  color: #f87171;
 }
 
 .edit-btn {
