@@ -180,7 +180,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['exit-review', 'update-card-stats'])
+const emit = defineEmits(['exit-review'])
 
 const isReviewing = ref(false)
 const showResult = ref(false)
@@ -254,7 +254,6 @@ const markKnown = () => {
   if (!isFlipped.value) return
   
   knownCount.value++
-  emit('update-card-stats', currentCard.value.id, 'known')
   nextCard()
 }
 
@@ -262,7 +261,6 @@ const markUnknown = () => {
   if (!isFlipped.value) return
   
   unknownCount.value++
-  emit('update-card-stats', currentCard.value.id, 'unknown')
   nextCard()
 }
 
