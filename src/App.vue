@@ -7,8 +7,12 @@
 
     <ReviewMode 
       v-if="isReviewMode" 
-      :cards="cards" 
+      :cards="getCardsForReview" 
+      :categories="categories"
+      :selected-category="selectedCategoryForReview"
+      :get-category-name="getCategoryName"
       @exit-review="exitReviewMode" 
+      @enter-review-by-category="enterReviewMode"
     />
 
     <template v-else>
@@ -22,12 +26,19 @@
         </button>
       </div>
 
-      <AddCard @add-card="handleAddCard" />
+      <AddCard 
+        :categories="categories" 
+        @add-card="handleAddCard" 
+        @add-category="addCategory"
+      />
 
       <CardList 
         :cards="cards" 
+        :categories="categories"
+        :get-category-name="getCategoryName"
         @delete-card="showDeleteConfirm" 
         @edit-card="handleEditCard"
+        @enter-review-by-category="enterReviewMode"
       />
 
       <div v-if="cards.length === 0" class="empty-state">
@@ -62,8 +73,10 @@
     <EditCard
       :visible="showEditModal"
       :card="editingCard"
+      :categories="categories"
       @update:visible="(val) => showEditModal = val"
       @save-card="handleSaveCard"
+      @add-category="addCategory"
     />
   </div>
 </template>
@@ -77,6 +90,7 @@ import ReviewMode from './components/ReviewMode.vue'
 import EditCard from './components/EditCard.vue'
 
 const cards = ref([])
+const categories = ref([])
 const showDuplicateModal = ref(false)
 const showDeleteModal = ref(false)
 const showEditModal = ref(false)
@@ -86,6 +100,7 @@ const editingCard = ref(null)
 const pendingEditCard = ref(null)
 const isEditDuplicate = ref(false)
 const isReviewMode = ref(false)
+const selectedCategoryForReview = ref(null)
 
 const deleteMessage = computed(() => {
   return '确定要删除这张卡片吗？\n删除后无法恢复。'
@@ -128,6 +143,48 @@ const loadCards = () => {
 
 const saveCards = () => {
   localStorage.setItem('flashCards', JSON.stringify(cards.value))
+}
+
+const loadCategories = () => {
+  const savedCategories = localStorage.getItem('flashCardCategories')
+  if (savedCategories) {
+    try {
+      categories.value = JSON.parse(savedCategories)
+    } catch (e) {
+      console.error('Failed to load categories:', e)
+      categories.value = []
+    }
+  }
+}
+
+const saveCategories = () => {
+  localStorage.setItem('flashCardCategories', JSON.stringify(categories.value))
+}
+
+const addCategory = (categoryName) => {
+  if (!categoryName.trim()) return null
+  
+  const existingCategory = categories.value.find(
+    cat => cat.name.toLowerCase() === categoryName.trim().toLowerCase()
+  )
+  
+  if (existingCategory) {
+    return existingCategory
+  }
+  
+  const newCategory = {
+    id: Date.now().toString(),
+    name: categoryName.trim(),
+    createdAt: new Date().toISOString()
+  }
+  categories.value.push(newCategory)
+  return newCategory
+}
+
+const getCategoryName = (categoryId) => {
+  if (!categoryId) return '未分类'
+  const category = categories.value.find(cat => cat.id === categoryId)
+  return category ? category.name : '已删除分类'
 }
 
 const isWordDuplicate = (word, excludeId = null) => {
@@ -225,9 +282,17 @@ const confirmEditDuplicate = () => {
   }
 }
 
-const enterReviewMode = () => {
+const enterReviewMode = (categoryId = null) => {
+  selectedCategoryForReview.value = categoryId
   isReviewMode.value = true
 }
+
+const getCardsForReview = computed(() => {
+  if (selectedCategoryForReview.value) {
+    return cards.value.filter(card => card.categoryId === selectedCategoryForReview.value)
+  }
+  return cards.value
+})
 
 const exitReviewMode = () => {
   isReviewMode.value = false
@@ -235,10 +300,15 @@ const exitReviewMode = () => {
 
 onMounted(() => {
   loadCards()
+  loadCategories()
 })
 
 watch(cards, () => {
   saveCards()
+}, { deep: true })
+
+watch(categories, () => {
+  saveCategories()
 }, { deep: true })
 </script>
 
