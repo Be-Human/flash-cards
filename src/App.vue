@@ -7,12 +7,11 @@
 
     <ReviewMode 
       v-if="isReviewMode" 
-      :cards="getCardsForReview" 
+      :cards="cards" 
       :categories="categories"
       :selected-category="selectedCategoryForReview"
       :get-category-name="getCategoryName"
       @exit-review="exitReviewMode" 
-      @enter-review-by-category="enterReviewMode"
     />
 
     <template v-else>
@@ -286,13 +285,6 @@ const enterReviewMode = (categoryId = null) => {
   selectedCategoryForReview.value = categoryId
   isReviewMode.value = true
 }
-
-const getCardsForReview = computed(() => {
-  if (selectedCategoryForReview.value == null || selectedCategoryForReview.value === '') {
-    return cards.value
-  }
-  return cards.value.filter(card => card.categoryId === selectedCategoryForReview.value)
-})
 
 const exitReviewMode = () => {
   isReviewMode.value = false
